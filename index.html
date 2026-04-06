@@ -5,158 +5,113 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Sản phẩm</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; line-height: 1.6; }
+    body { font-family: Arial, sans-serif; padding: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-    th { background-color: #f4f4f4; cursor: pointer; user-select: none; }
-    
-    tbody tr:nth-child(even) { background-color: #f9f9f9; }
-    
-    tbody tr:hover { background-color: #f1f1f1; }
-
-    .form-container { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
-    .form-group { margin-bottom: 10px; }
-    label { display: inline-block; width: 120px; }
-    input { padding: 5px; width: 250px; }
-    button { padding: 8px 15px; cursor: pointer; background-color: #289fa7; color: white; border: none; border-radius: 3px; }
-    button:hover { background-color: #217388; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; cursor: pointer; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    tr:hover { background-color: #f1f1f1; }
+    .form-section { margin-bottom: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
+    input { margin-right: 10px; padding: 5px; }
+    button { padding: 5px 15px; background: #28a745; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <h1>Quản lý Danh sách Sản phẩm</h1>
-
-  <div class="form-container">
-    <h3>Thêm sản phẩm mới</h3>
-    <div class="form-group">
-      <label>Tên sản phẩm:</label>
-      <input type="text" id="input-name" placeholder="Nhập tên (ít nhất 3 ký tự)">
-    </div>
-    <div class="form-group">
-      <label>Danh mục:</label>
-      <input type="text" id="input-category" placeholder="Nhập danh mục">
-    </div>
-    <div class="form-group">
-      <label>Đơn giá:</label>
-      <input type="number" id="input-price" placeholder="Nhập giá dương">
-    </div>
-    <div class="form-group">
-      <label>Số lượng:</label>
-      <input type="number" id="input-quantity" placeholder="Nhập số lượng ≥ 1">
-    </div>
-    <button id="btn-add" type="button">+ Thêm sản phẩm</button>
+  <div class="form-section">
+    <input type="text" id="input-name" placeholder="Tên sản phẩm">
+    <input type="text" id="input-category" placeholder="Danh mục">
+    <input type="number" id="input-price" placeholder="Đơn giá">
+    <input type="number" id="input-quantity" placeholder="Số lượng">
+    <button id="btn-add">Thêm</button>
   </div>
 
   <table id="product-table">
     <thead>
       <tr>
         <th>STT</th>
-        <th id="sort-name">Tên sản phẩm <span id="sort-icon"></span></th>
+        <th id="header-name">Tên sản phẩm <span id="sort-icon"></span></th>
         <th>Danh mục</th>
         <th>Đơn giá</th>
         <th>Số lượng</th>
       </tr>
     </thead>
-    <tbody>
-      </tbody>
+    <tbody></tbody>
   </table>
 
   <script>
-    let productList = [];
-    let sortDirection = 0; 
+    let products = [];
+    let isAsc = true;
 
-    const tableBody = document.querySelector('#product-table tbody');
-    const sortIcon = document.getElementById('sort-icon');
-
-    function loadProducts() {
+    // 4.1 Nạp dữ liệu qua AJAX
+    function loadData() {
       const xhr = new XMLHttpRequest();
       xhr.onreadystatechange = function() {
         if (xhr.readyState === 4 && xhr.status === 200) {
-          productList = JSON.parse(xhr.responseText);
-          renderTable(productList);
+          products = JSON.parse(xhr.responseText);
+          renderTable(products);
         }
       };
-      xhr.open('GET', 'products.json');
+      xhr.open('GET', 'products.json', true);
       xhr.send();
     }
 
     function renderTable(data) {
-      tableBody.innerHTML = '';
+      const tbody = document.querySelector('#product-table tbody');
+      tbody.innerHTML = '';
       data.forEach((item, index) => {
-        const row = `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${item.name}</td>
-            <td>${item.category}</td>
-            <td>${Number(item.price).toLocaleString()}đ</td>
-            <td>${item.quantity}</td>
-          </tr>
-        `;
-        tableBody.insertAdjacentHTML('beforeend', row);
+        const row = `<tr>
+          <td>${index + 1}</td>
+          <td>${item.name}</td>
+          <td>${item.category}</td>
+          <td>${item.price}</td>
+          <td>${item.quantity}</td>
+        </tr>`;
+        tbody.innerHTML += row;
       });
     }
 
-    document.getElementById('sort-name').addEventListener('click', function() {
-      if (sortDirection === 1) {
-        sortDirection = -1;
-        sortIcon.textContent = ' ▼';
-      } else {
-        sortDirection = 1;
-        sortIcon.textContent = ' ▲';
-      }
-
-      productList.sort((a, b) => {
-        const nameA = a.name.toUpperCase();
-        const nameB = b.name.toUpperCase();
-        if (nameA < nameB) return -1 * sortDirection;
-        if (nameA > nameB) return 1 * sortDirection;
-        return 0;
+    // 4.2 Sắp xếp bảng
+    document.getElementById('header-name').addEventListener('click', () => {
+      products.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        return isAsc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
       });
-
-      renderTable(productList);
+      
+      const icon = document.getElementById('sort-icon');
+      icon.innerHTML = isAsc ? ' ▲' : ' ▼';
+      isAsc = !isAsc;
+      renderTable(products);
     });
 
-    document.getElementById('btn-add').addEventListener('click', function(event) {
-      event.preventDefault();
-      const name = document.getElementById('input-name').value.trim();
-      const category = document.getElementById('input-category').value.trim();
-      const price = parseFloat(document.getElementById('input-price').value);
-      const quantity = parseInt(document.getElementById('input-quantity').value);
+    // 4.3 Thêm sản phẩm
+    document.getElementById('btn-add').addEventListener('click', () => {
+      const name = document.getElementById('input-name').value;
+      const category = document.getElementById('input-category').value;
+      const price = document.getElementById('input-price').value;
+      const quantity = document.getElementById('input-quantity').value;
 
-      if (name.length < 3) {
-        alert("Tên sản phẩm phải có ít nhất 3 ký tự!");
-        return;
+      if (name.length >= 3 && price > 0 && quantity >= 1) {
+        const newProduct = {
+          id: products.length + 1,
+          name: name,
+          category: category,
+          price: parseInt(price),
+          quantity: parseInt(quantity)
+        };
+        products.push(newProduct);
+        renderTable(products);
+        
+        // Reset form
+        document.getElementById('input-name').value = '';
+        document.getElementById('input-category').value = '';
+        document.getElementById('input-price').value = '';
+        document.getElementById('input-quantity').value = '';
       }
-      if (isNaN(price) || price <= 0) {
-        alert("Đơn giá phải là số dương!");
-        return;
-      }
-      if (isNaN(quantity) || quantity < 1) {
-        alert("Số lượng phải là số nguyên ≥ 1!");
-        return;
-      }
-
-      const newProduct = {
-        id: productList.length + 1,
-        name: name,
-        category: category || "Chưa phân loại",
-        price: price,
-        quantity: quantity
-      };
-
-      productList.push(newProduct);
-      renderTable(productList);
-
-      document.getElementById('input-name').value = '';
-      document.getElementById('input-category').value = '';
-      document.getElementById('input-price').value = '';
-      document.getElementById('input-quantity').value = '';
     });
 
-    if (typeof window !== 'undefined') {
-      window.onload = loadProducts;
-    }
-    loadProducts();
+    window.onload = loadData;
   </script>
 </body>
 </html>
