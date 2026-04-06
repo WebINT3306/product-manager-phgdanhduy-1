@@ -44,7 +44,7 @@
       <label>Số lượng:</label>
       <input type="number" id="input-quantity" placeholder="Nhập số lượng ≥ 1">
     </div>
-    <button id="btn-add">+ Thêm sản phẩm</button>
+    <button id="btn-add" type="button">+ Thêm sản phẩm</button>
   </div>
 
   <table id="product-table">
@@ -116,7 +116,8 @@
       renderTable(productList);
     });
 
-    document.getElementById('btn-add').addEventListener('click', function() {
+    document.getElementById('btn-add').addEventListener('click', function(event) {
+      event.preventDefault();
       const name = document.getElementById('input-name').value.trim();
       const category = document.getElementById('input-category').value.trim();
       const price = parseFloat(document.getElementById('input-price').value);
@@ -152,7 +153,10 @@
       document.getElementById('input-quantity').value = '';
     });
 
-    window.onload = loadProducts;
+    if (typeof window !== 'undefined') {
+      window.onload = loadProducts;
+    }
+    loadProducts();
   </script>
 </body>
 </html>
